@@ -1,9 +1,9 @@
+import logging
 from dataclasses import dataclass
+from typing import Dict, List, Tuple
+
 from .renderers.renderer import Renderer
 from .tiles import Tile
-from typing import Dict, Tuple, List
-
-import logging
 
 log = logging.getLogger(__package__)
 
@@ -25,7 +25,8 @@ class Grid:
 
     def add_tile(self, tile: Tile):
         self.tiles[(tile.x, tile.y)] = tile
-        self.empty_positions.remove((tile.x, tile.y))
+        if (tile.x, tile.y) in self.empty_positions:
+            self.empty_positions.remove((tile.x, tile.y))
         self.updated_tiles.append(tile)
 
     def remove_tile(self, x: int, y: int):
@@ -37,7 +38,7 @@ class Grid:
     def __convert_coord_to_pixel(self, x: int, y: int) -> Tuple[int, int]:
         pixel_x = x * self.tile_width
         pixel_y = y * self.tile_height
-        return pixel_x, pixel_y
+        return int(pixel_x), int(pixel_y)
 
     def draw(self):
         for tile in self.updated_tiles:
@@ -45,6 +46,6 @@ class Grid:
                 log.debug(f"updating following tile: {self.updated_tiles}")
                 x, y = self.__convert_coord_to_pixel(x=tile.x, y=tile.y)
                 self.renderer.add_shape_to_frame(
-                    x=x, y=y, shape_width=self.tile_width, shape_height=self.tile_height, shape=tile.shape, shape_color=tile.color)
+                    x=x, y=y, shape_width=int(self.tile_width), shape_height=int(self.tile_height), shape=tile.shape, shape_color=tile.color)
         self.updated_tiles.clear()
         self.renderer.draw_frame()
