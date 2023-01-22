@@ -34,13 +34,10 @@ class Snake:
     initial_x: int
     initial_y: int
 
-    speed: float
-    growth_rate: int
-
-    direction: SnakeDirection = SnakeDirection.STOPPED
     segments: List[Tile] = field(default_factory=list)
 
     def __post_init__(self):
+        self.__direction: SnakeDirection = SnakeDirection.STOPPED
         if not self.segments:
             self.segments.append(SnakeTile(x=self.initial_x, y=self.initial_y))
 
@@ -52,8 +49,16 @@ class Snake:
             SnakeDirection.STOPPED: (0, 0),
         }
 
-        self.size = 1
-        self.size_delta = 0
+        self.length = 1
+
+        self.forbiden_moves = {
+            SnakeDirection.UP: SnakeDirection.DOWN,
+            SnakeDirection.DOWN: SnakeDirection.UP,
+            SnakeDirection.LEFT: SnakeDirection.RIGHT,
+            SnakeDirection.RIGHT: SnakeDirection.LEFT,
+            SnakeDirection.STOPPED: SnakeDirection.STOPPED
+        }
+
 
     @property
     def x(self):
@@ -63,43 +68,49 @@ class Snake:
     def y(self):
         return self.segments[0].y
 
+    @property
+    def direction(self):
+        return self.__direction
+
+    @direction.setter
+    def direction(self, direction: SnakeDirection):
+        if self.forbiden_moves[self.direction] != direction:
+            self.__direction = direction
+
     def __move(self, food_x: int, food_y: int) -> SnakeEvent:
         ret = SnakeEvent.NO_EVENT
 
         log.debug(
-            f"Moving snake, speed: {self.speed}, direction: {self.direction}")
+            f"Moving snake, direction: {self.direction}")
 
         food_touched = False
 
-        for i in range(int(self.speed)):
-            head: Tile = self.segments[0]
+        head: Tile = self.segments[0]
 
-            x_delta, y_delta = self.movement_deltas[self.direction]
+        x_delta, y_delta = self.movement_deltas[self.direction]
 
-            new_head = SnakeTile(x=(head.x + x_delta), y=(head.y + y_delta))
+        new_head = SnakeTile(x=(head.x + x_delta), y=(head.y + y_delta))
 
-            if new_head.x == food_x and new_head.y == food_y:
-                food_touched = True
+        if new_head.x == food_x and new_head.y == food_y:
+            food_touched = True
 
-            for x, y in [(tile.x, tile.y) for tile in self.segments]:
-                if new_head.x == x and new_head.y == y:
-                    ret = SnakeEvent.SELF_BITE
-                    break
-
-            self.segments.insert(0, new_head)
-
-            if food_touched and i == (self.speed - 1):
-                self.size += 1
-                ret = SnakeEvent.ATE_FOOD
-                log.info(f"Snake ate food at {(new_head.x, new_head.y)}")
-                # To grow, don't erase the last bit of tail
+        for x, y in [(tile.x, tile.y) for tile in self.segments]:
+            if new_head.x == x and new_head.y == y:
+                ret = SnakeEvent.SELF_BITE
                 break
 
+        self.segments.insert(0, new_head)
+
+        if food_touched:
+            self.length += 1
+            ret = SnakeEvent.ATE_FOOD
+            log.info(f"Snake ate food at {(new_head.x, new_head.y)}")
+            # To grow, don't erase the last bit of tail
+        else:
             # Removing the tail
             self.segments.pop()
-            self.size_delta = 0
 
-        log.debug(f"Snakes coordinates: {(self.x, self.y)}")
+        log.debug(f"Snakes coordinates: {(self.x, self.y)}, Snake lenght: {self.length}")
         return ret
 
     def update(self, food_x: int, food_y: int) -> SnakeEvent:

@@ -35,7 +35,10 @@ class PygameRenderer(Renderer):
                      shape_width: int,
                      shape_height: int,
                      shape_color: Colors = Colors.BLACK):
-        pass
+        log.debug(f"Drawing circle at: {(x, y)} in {shape_color}")
+        rect = pygame.Rect(x, y, shape_width, shape_height)
+        pygame.draw.ellipse(self.window, self.color_map[shape_color], rect)
+
 
     def _draw_square(self, x: int, y: int,
                      shape_width: int,

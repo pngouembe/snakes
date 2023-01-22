@@ -8,7 +8,7 @@ from .tiles import Tile
 
 @dataclass
 class FoodTile(Tile):
-    shape: Shapes = Shapes.SQUARE
+    shape: Shapes = Shapes.CIRCLE
     color: Colors = Colors.RED
 
 
